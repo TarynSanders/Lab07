@@ -37,7 +37,7 @@ def read_light_sensor():
 
 # Function to read sound sensor and detect taps
 def read_sound_sensor():
-    threshold = 200  # Adjust this threshold based on experimentation
+    threshold = 300  # Adjust this threshold based on experimentation
     duration = 5  # 5 seconds
     start_time = time.time()
     while time.time() - start_time < duration:
@@ -64,8 +64,6 @@ try:
         # Read sound sensor for 5 seconds with intervals of 100ms
         read_sound_sensor()
 
-except KeyboardInterrupt:
-    print("Testing routine interrupted by user.")
 finally:
     GPIO.cleanup()  # Clean up GPIO settings when the script exits
 
