@@ -1,3 +1,5 @@
+#Github Link: https://github.com/TarynSanders/Lab07.git
+
 import time
 import RPi.GPIO as GPIO
 import Adafruit_GPIO.SPI as SPI
