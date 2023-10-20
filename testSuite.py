@@ -1,56 +1,69 @@
 import time
-import grovepi  # Assuming you are using GrovePi library for sensors and LED control
+import RPi.GPIO as GPIO
+import Adafruit_GPIO.SPI as SPI
+import Adafruit_MCP3008
 
-# Set pin numbers for sensors and LED (please adjust these according to your hardware setup)
-led_pin = 2
-light_sensor_pin = 0
-sound_sensor_pin = 1
+# Set up GPIO and MCP3008
+GPIO.setmode(GPIO.BOARD)
+led_pin = 11
+GPIO.setup(led_pin, GPIO.OUT)
 
-# Thresholds for light and sound sensors (you may need to adjust these after experimentation)
-light_threshold = 300
-sound_threshold = 100
+SPI_PORT = 0
+SPI_DEVICE = 0
+mcp = Adafruit_MCP3008.MCP3008(spi=SPI.SpiDev(SPI_PORT, SPI_DEVICE))
 
-# Blink LED function
+# Function to blink LED
 def blink_led(times, interval):
     for _ in range(times):
-        grovepi.digitalWrite(led_pin, 1)  # Turn ON LED
+        GPIO.output(led_pin, GPIO.HIGH)
         time.sleep(interval)
-        grovepi.digitalWrite(led_pin, 0)  # Turn OFF LED
+        GPIO.output(led_pin, GPIO.LOW)
         time.sleep(interval)
+
+# Function to read light sensor and determine brightness
+def read_light_sensor():
+    threshold = 300
+    duration = 5  # 5 seconds
+    start_time = time.time()
+    while time.time() - start_time < duration:
+        light_value = mcp.read_adc(0)  # Assuming light sensor is connected to channel 0
+        if light_value > threshold:
+            print(f"Light Value: {light_value} - Bright")
+        else:
+            print(f"Light Value: {light_value} - Dark")
+        time.sleep(0.1)
+
+# Function to read sound sensor and detect taps
+def read_sound_sensor():
+    threshold = 200  # Adjust this threshold based on experimentation
+    duration = 5  # 5 seconds
+    start_time = time.time()
+    while time.time() - start_time < duration:
+        sound_value = mcp.read_adc(1)  # Assuming sound sensor is connected to channel 1
+        print(f"Sound Value: {sound_value}")
+        if sound_value > threshold:
+            GPIO.output(led_pin, GPIO.HIGH)  # Turn on LED for 100ms if sound is above threshold
+            time.sleep(0.1)
+            GPIO.output(led_pin, GPIO.LOW)
+        time.sleep(0.1)
 
 # Main testing routine
 try:
     while True:
-        # Blink LED 5 times with on/off intervals of 500ms
+        # Blink the LED 5 times with on/off intervals of 500ms
         blink_led(5, 0.5)
-
+        
         # Read light sensor for 5 seconds with intervals of 100ms
-        start_time = time.time()
-        while time.time() - start_time < 5:
-            light_value = grovepi.analogRead(light_sensor_pin)
-            if light_value > light_threshold:
-                print(f"Light Value: {light_value} - Bright")
-            else:
-                print(f"Light Value: {light_value} - Dark")
-            time.sleep(0.1)
-
-        # Blink LED 4 times with on/off intervals of 200ms
+        read_light_sensor()
+        
+        # Blink the LED 4 times with on/off intervals of 200ms
         blink_led(4, 0.2)
-
+        
         # Read sound sensor for 5 seconds with intervals of 100ms
-        start_time = time.time()
-        while time.time() - start_time < 5:
-            sound_value = grovepi.analogRead(sound_sensor_pin)
-            print(f"Sound Value: {sound_value}")
-            if sound_value > sound_threshold:
-                grovepi.digitalWrite(led_pin, 1)  # Turn ON LED for 100ms if sound is above threshold
-                time.sleep(0.1)
-                grovepi.digitalWrite(led_pin, 0)  # Turn OFF LED
-            time.sleep(0.1)
+        read_sound_sensor()
 
 except KeyboardInterrupt:
     print("Testing routine interrupted by user.")
-except Exception as e:
-    print(f"An error occurred: {e}")
 finally:
-    grovepi.digitalWrite(led_pin, 0)  # Ensure the LED is turned off
+    GPIO.cleanup()  # Clean up GPIO settings when the script exits
+
